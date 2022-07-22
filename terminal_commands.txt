@@ -1,0 +1,4 @@
+
+Example 1
+
+python .\tune_hyperparameters.py --alg PPO --tickers BOVA11.SA --h-max 200 --train-period 2011-01-01 2017-12-31 --eval-period 2018-01-01 2018-12-31 --trade-period 2019-01-01 2020-08-31 --initial-amount 100000 --n-trials 100 --tuning-timesteps 15000 --n-repeats-by-trial 3
