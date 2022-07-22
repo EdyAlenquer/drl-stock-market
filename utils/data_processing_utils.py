@@ -47,3 +47,28 @@ def get_data(
 
     print('\nValores nulos excluídos')
     return df
+
+def get_data_with_fundamentals(
+    start_date,
+    end_date, 
+    tickers, 
+    tech_indicators,
+    use_vix=True,
+    use_turbulence=True
+):
+    df = get_data(
+        start_date=start_date,
+        end_date=end_date,
+        tickers=tickers,
+        tech_indicators=tech_indicators,
+        use_vix=use_vix,
+        use_turbulence=use_turbulence
+    )
+
+    df['tic'] = df['tic'].str.replace('4.SA', '').str.replace('3.SA', '')
+
+    df_fundamentals = pd.read_csv('data/{}.csv'.format(df['tic'].iloc[0]))
+    df_fundamentals = df_fundamentals.drop('SIGLA', axis=1)
+    
+    df = df.merge(df_fundamentals, how='left', on='date')
+    return df

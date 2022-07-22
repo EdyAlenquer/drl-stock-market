@@ -37,9 +37,9 @@ def backtest_stats(account_value, value_col_name="account_value"):
         returns=dr_test,
         positions=None,
         transactions=None,
-        turnover_denom="AGB",
+        # turnover_denom="AGB",
     )
-    print(perf_stats_all)
+    # print(perf_stats_all)
     return perf_stats_all
 
 

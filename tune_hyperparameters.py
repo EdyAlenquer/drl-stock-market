@@ -15,7 +15,7 @@ from finrl.meta.preprocessor.yahoodownloader import YahooDownloader
 from finrl.meta.env_stock_trading.env_stocktrading import StockTradingEnv
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize, VecMonitor, sync_envs_normalization
 
-from utils import model_utils, file_utils
+from utils import model_utils, file_utils, data_processing_utils
 from utils.model_utils import ALGORITHMS
 from utils.callbacks import EvalCallback
 import config
@@ -84,6 +84,8 @@ if __name__ == '__main__':
     
     parser.add_argument('--use-best-model', default=False, type=bool)
 
+    parser.add_argument('--use-fundamentals', default=False, type=bool)
+
     args = parser.parse_args()
 
     print('-'*100)
@@ -97,14 +99,14 @@ if __name__ == '__main__':
         TICKER_NAME = '_'.join(args.tickers).replace('.SA', '')
 
     if args.output_path == '':
-        OUTPUT_PATH = './HYPERPARAMETER_TUNING/{}/{}_HMAX_{}'.format(
+        OUTPUT_PATH = './TUNING/{}/{}_HMAX_{}'.format(
             TICKER_NAME, args.alg, args.hmax
         )
 
         OUTPUT_PATH = file_utils.uniquify(OUTPUT_PATH)
     else:
         OUTPUT_PATH = os.path.join(
-            './HYPERPARAMETER_TUNING', TICKER_NAME, args.output_path
+            './TUNING', TICKER_NAME, args.output_path
         )
 
     os.makedirs(OUTPUT_PATH, exist_ok=True)
@@ -115,31 +117,25 @@ if __name__ == '__main__':
         json.dump(args.__dict__, f, indent=4)
 
     # DATA PROCESSING
-    df = YahooDownloader(
-        args.train_period[0], 
-        args.trade_period[1], 
-        args.tickers
-    ).fetch_data()
-
-    fe = FeatureEngineer(
-        use_technical_indicator=True,
-        tech_indicator_list = args.indicators,
-        use_vix=True,
-        use_turbulence=True,
-        user_defined_feature = False
-    )
-
-    df = fe.preprocess_data(df)
-
-    list_ticker = df["tic"].unique().tolist()
-    list_date = list(pd.date_range(df['date'].min(),df['date'].max()).astype(str))
-    combination = list(itertools.product(list_date,list_ticker))
-
-    processed_full = pd.DataFrame(combination,columns=["date","tic"]).merge(df,on=["date","tic"],how="left")
-    processed_full = processed_full[processed_full['date'].isin(df['date'])]
-    processed_full = processed_full.sort_values(['date','tic'])
+    tech_indicators = args.indicators
     
-    df = processed_full.dropna()
+    if args.use_fundamentals:
+        df = data_processing_utils.get_data_with_fundamentals(
+            start_date=args.train_period[0], 
+            end_date=args.trade_period[1], 
+            tickers=args.tickers,
+            tech_indicators=args.indicators
+        )
+        tech_indicators += [
+            'Lucro Descontado', 'Margem Descontada', 'ROE'
+        ]
+    else:
+        df = data_processing_utils.get_data(
+            start_date=args.train_period[0], 
+            end_date=args.trade_period[1], 
+            tickers=args.tickers,
+            tech_indicators=args.indicators
+        )
 
     # STORING DATASET
     df.to_pickle(
@@ -149,8 +145,10 @@ if __name__ == '__main__':
         )
     )
 
+    print(df.tail())
+
     # ENVIRONMENT CONFIGS
-    tech_indicators = args.indicators
+    
     if args.use_ohlcv: 
         tech_indicators += ['open', 'high', 'low', 'volume']
     
@@ -454,7 +452,9 @@ if __name__ == '__main__':
     #You can also use Multivariate samplere
     #sampler = optuna.samplers.TPESampler(multivarite=True,seed=42)
 
-    sampler = optuna.samplers.TPESampler(seed=65482)
+    sampler = optuna.samplers.TPESampler(
+        seed=225214
+    )
 
     study = optuna.create_study(
         storage='sqlite:///{}/{}'.format(OUTPUT_PATH, 'optuna.db'),
