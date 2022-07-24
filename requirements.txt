@@ -37,3 +37,17 @@ wrds
 yfinance
 
 pyfolio==0.8.0
+
+
+#webscraping
+beautifulsoup4==4.9.3
+selenium==3.141.0
+webdriver_manager==3.4.2
+
+
+#deep learning
+pytorch 
+torchvision 
+torchaudio 
+cudatoolkit=10.2
+pytorch-lts
