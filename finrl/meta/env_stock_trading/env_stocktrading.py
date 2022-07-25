@@ -342,6 +342,13 @@ class StockTradingEnv(gym.Env):
             # state: s -> s+1
             self.day += 1
             self.data = self.df.loc[self.day, :]
+            
+            
+            # if self.day % 50 == 0:
+            #     print(self.data)
+            
+            
+            
             if self.turbulence_threshold is not None:
                 if len(self.df.tic.unique()) == 1:
                     self.turbulence = self.data[self.risk_indicator_col]

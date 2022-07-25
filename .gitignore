@@ -167,3 +167,9 @@ data/*
 downloaded*
 extracted*
 consolidated*
+tb_log*
+monitor_logs*
+actions_logs*
+models*
+optuna.db
+dataset.pkl

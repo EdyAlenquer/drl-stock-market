@@ -1,0 +1,44 @@
+{
+    "stock_dim": 1,
+    "hmax": 200,
+    "initial_amount": 100000,
+    "num_stock_shares": [
+        0
+    ],
+    "buy_cost_pct": [
+        0.001
+    ],
+    "sell_cost_pct": [
+        0.001
+    ],
+    "reward_scaling": 1,
+    "state_space": 26,
+    "action_space": 1,
+    "tech_indicator_list": [
+        "macd",
+        "boll_ub",
+        "boll_lb",
+        "rsi_30",
+        "stochrsi_30",
+        "wr_30",
+        "vwma_30",
+        "cci_30",
+        "dx_30",
+        "close_30_sma",
+        "close_60_sma",
+        "LPA",
+        "VPA",
+        "P/L",
+        "P/EBITDA",
+        "P/VPA",
+        "DL/PL",
+        "DL/EBITDA",
+        "ROE",
+        "MARGEM_EBITDA",
+        "DL/EBIT",
+        "MARGEM_EBIT",
+        "MARGEM_LIQUIDA"
+    ],
+    "turbulence_threshold": null,
+    "print_verbosity": 1000
+}

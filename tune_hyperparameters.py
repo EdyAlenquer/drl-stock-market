@@ -127,7 +127,8 @@ if __name__ == '__main__':
             tech_indicators=args.indicators
         )
         tech_indicators += [
-            'Lucro Descontado', 'Margem Descontada', 'ROE'
+            'LPA', 'VPA', 'P/L', 'P/EBITDA', 'P/VPA', 'DL/PL', 'DL/EBITDA',
+            'ROE', 'MARGEM_EBITDA', 'DL/EBIT', 'MARGEM_EBIT', 'MARGEM_LIQUIDA'
         ]
     else:
         df = data_processing_utils.get_data(

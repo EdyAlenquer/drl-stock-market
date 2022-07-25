@@ -1,0 +1,43 @@
+{
+    "alg": "SAC",
+    "tickers": [
+        "PETR4.SA"
+    ],
+    "tuning_timesteps": 200000,
+    "train_timesteps": 200000,
+    "train_period": [
+        "2014-01-01",
+        "2018-12-31"
+    ],
+    "eval_period": [
+        "2019-01-01",
+        "2019-12-31"
+    ],
+    "trade_period": [
+        "2020-01-01",
+        "2021-12-31"
+    ],
+    "indicators": [
+        "macd",
+        "boll_ub",
+        "boll_lb",
+        "rsi_30",
+        "stochrsi_30",
+        "wr_30",
+        "vwma_30",
+        "cci_30",
+        "dx_30",
+        "close_30_sma",
+        "close_60_sma"
+    ],
+    "hmax": 500,
+    "use_ohlcv": false,
+    "initial_amount": 100000,
+    "n_trials": 100,
+    "n_repeats_by_trial": 3,
+    "output_path": "DDPG_HMAX_500_WITH_FUND_LAG_20",
+    "metric_to_optimize": "Cumulative returns",
+    "n_eval_episodes": 1,
+    "use_best_model": true,
+    "use_fundamentals": true
+}

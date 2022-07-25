@@ -5,8 +5,6 @@ import itertools
 from finrl.meta.preprocessor.preprocessors import FeatureEngineer, data_split
 from finrl.meta.preprocessor.yahoodownloader import YahooDownloader
 
-
-
 def get_data(
     start_date,
     end_date, 
@@ -67,8 +65,12 @@ def get_data_with_fundamentals(
 
     df['tic'] = df['tic'].str.replace('4.SA', '').str.replace('3.SA', '')
 
-    df_fundamentals = pd.read_csv('data/{}.csv'.format(df['tic'].iloc[0]))
-    df_fundamentals = df_fundamentals.drop('SIGLA', axis=1)
+    df_fundamentals = pd.read_csv('./cvm_data/{}_FUND.csv'.format(tickers[0]))
+
+    print(df_fundamentals)
+    # df_fundamentals = df_fundamentals.drop('SIGLA', axis=1)
     
     df = df.merge(df_fundamentals, how='left', on='date')
+    print('\n\nDF_FINAL\n\n')
+    print(df)
     return df
