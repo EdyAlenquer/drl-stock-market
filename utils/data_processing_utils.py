@@ -73,4 +73,6 @@ def get_data_with_fundamentals(
     df = df.merge(df_fundamentals, how='left', on='date')
     print('\n\nDF_FINAL\n\n')
     print(df)
+    print(df.columns)
+
     return df

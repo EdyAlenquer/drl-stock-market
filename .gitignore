@@ -162,7 +162,7 @@ cython_debug/
 
 # Data
 
-HYPERPARAMETER_TUNING/*
+TUNING/*
 data/*
 downloaded*
 extracted*

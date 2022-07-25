@@ -13,6 +13,7 @@ from sqlalchemy import column
 from finrl.meta.preprocessor.preprocessors import FeatureEngineer, data_split
 from finrl.meta.preprocessor.yahoodownloader import YahooDownloader
 from finrl.meta.env_stock_trading.env_stocktrading import StockTradingEnv
+from finrl.plot import backtest_stats
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize, VecMonitor, sync_envs_normalization
 
 from utils import model_utils, file_utils, data_processing_utils
@@ -57,11 +58,6 @@ if __name__ == '__main__':
         default=[config.TRADE_START_DATE, config.TRADE_END_DATE]
     )
 
-    parser.add_argument(
-        '--indicators', nargs='+', default=config.INDICATORS,
-        required=False
-    )
-
     parser.add_argument("--hmax", default=200, type=int)
 
     parser.add_argument("--use-ohlcv", default=False, type=bool)
@@ -84,7 +80,15 @@ if __name__ == '__main__':
     
     parser.add_argument('--use-best-model', default=False, type=bool)
 
-    parser.add_argument('--use-fundamentals', default=False, type=bool)
+    parser.add_argument('--use-fundamental-indicators', default=False, type=bool)
+
+    parser.add_argument('--use-tech-indicators', default=False, type=bool)
+
+    parser.add_argument(
+        '--indicators', nargs='+', default=config.INDICATORS,
+        required=False
+    )
+
 
     args = parser.parse_args()
 
@@ -117,9 +121,9 @@ if __name__ == '__main__':
         json.dump(args.__dict__, f, indent=4)
 
     # DATA PROCESSING
-    tech_indicators = args.indicators
+    tech_indicators = []
     
-    if args.use_fundamentals:
+    if args.use_fundamental_indicators:
         df = data_processing_utils.get_data_with_fundamentals(
             start_date=args.train_period[0], 
             end_date=args.trade_period[1], 
@@ -137,6 +141,10 @@ if __name__ == '__main__':
             tickers=args.tickers,
             tech_indicators=args.indicators
         )
+
+    if args.use_tech_indicators:
+        tech_indicators += args.indicators
+
 
     # STORING DATASET
     df.to_pickle(
@@ -372,9 +380,9 @@ if __name__ == '__main__':
 
             account_memory, actions_memory, state_memory = model_utils.predict(trained_model, env_eval)
 
-            # temp_metric = backtest_stats(account_value=account_memory[0][:-1])[
-            #     args.metric_to_optimize
-            # ]
+            temp_metric = backtest_stats(account_value=account_memory)[
+                args.metric_to_optimize
+            ]
 
             df_history = account_memory.merge(actions_memory, how='left', on='date')
             df_history = df_history.merge(eval_set[['date', 'close']], how='left', on='date')
@@ -399,11 +407,15 @@ if __name__ == '__main__':
             temp_metric = account_memory['account_value'].iloc[-1] / account_memory['account_value'].iloc[0] - 1
 
 
+            if temp_metric < 0.001:
+                return -np.inf
+
             register = dict()
             
             register['hyperparameters'] = model_utils.convert_params_to_store_format(
                 deepcopy(initial_hyperparameters)
             )
+            
             register['trial'] = trial.number
             register['metric'] = temp_metric
             

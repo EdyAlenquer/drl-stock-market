@@ -226,12 +226,12 @@ def sample_ddpg_params(trial: optuna.Trial) -> Dict[str, Any]:
     :param trial:
     :return:
     """
-    gamma = trial.suggest_categorical("gamma", [0.98, 0.99, 0.995, 0.999 ])
-    learning_rate = trial.suggest_loguniform("learning_rate", 1e-4, 1e-2)
+    gamma = trial.suggest_categorical("gamma", [0.98, 0.99, 0.999 ])
+    learning_rate = trial.suggest_loguniform("learning_rate", 1e-5, 1e-2)
     batch_size = trial.suggest_categorical("batch_size", [8, 64, 128, 512])
     buffer_size = trial.suggest_categorical("buffer_size", [int(1e4), int(1e5), int(1e6)])
     # Polyak coeff
-    tau = trial.suggest_categorical("tau", [0.001, 0.005, 0.01])
+    # tau = trial.suggest_categorical("tau", [0.001, 0.005, 0.01])
 
     # train_freq = trial.suggest_categorical("train_freq", [(8, 64, 128, 256, 512])
     # train_freq_type = trial.suggest_categorical('train_freq_type', ['episode', 'step'])
@@ -242,7 +242,7 @@ def sample_ddpg_params(trial: optuna.Trial) -> Dict[str, Any]:
     train_freq = trial.suggest_categorical("train_freq", [8, 64, 256, 1024])
 
     # train_freq = trial.suggest_categorical("train_freq", [1])
-    gradient_steps = train_freq#trial.suggest_categorical("gradient_steps", [8, 64, 256])
+    # gradient_steps = train_freq#trial.suggest_categorical("gradient_steps", [8, 64, 256])
 
     # noise_type = trial.suggest_categorical("noise_type", ["ornstein-uhlenbeck", "normal", None])
     # noise_std = trial.suggest_uniform("noise_std", 0, 0.2)
@@ -254,25 +254,25 @@ def sample_ddpg_params(trial: optuna.Trial) -> Dict[str, Any]:
     # activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU, "elu": nn.ELU, "leaky_relu": nn.LeakyReLU}[activation_fn]
 
 
-    net_arch = {
-        "small": [64, 64],
-        "medium": [256, 256],
-        "big": [400, 300],
-    }[net_arch]
+    # net_arch = {
+    #     "small": [64, 64],
+    #     "medium": [256, 256],
+    #     "big": [400, 300],
+    # }[net_arch]
 
     hyperparams = {
         "gamma": gamma,
-        "tau": tau,
-        "learning_starts": 20000, 
+        # "tau": tau,
+        "learning_starts": 2000, 
         "learning_rate": learning_rate,
         "batch_size": batch_size,
         "buffer_size": buffer_size,
         "train_freq": (train_freq, 'step'),
-        "gradient_steps": gradient_steps,
-        "policy_kwargs": dict(
-            net_arch=net_arch,
-            # activation_fn=activation_fn
-        ),
+        # "gradient_steps": gradient_steps,
+        # "policy_kwargs": dict(
+        #     net_arch=net_arch,
+        #     # activation_fn=activation_fn
+        # ),
     }
 
     # if noise_type == "normal":
