@@ -239,7 +239,7 @@ def sample_ddpg_params(trial: optuna.Trial) -> Dict[str, Any]:
     # if train_freq_type == 'episode':
     # train_freq = trial.suggest_categorical("train_freq", [1, 2, 3])
     # elif train_freq_type == 'step':
-    train_freq = trial.suggest_categorical("train_freq", [8, 64, 256, 1024])
+    train_freq = trial.suggest_categorical("train_freq", [16, 64, 256, 1024])
 
     # train_freq = trial.suggest_categorical("train_freq", [1])
     # gradient_steps = train_freq#trial.suggest_categorical("gradient_steps", [8, 64, 256])
@@ -248,9 +248,9 @@ def sample_ddpg_params(trial: optuna.Trial) -> Dict[str, Any]:
     # noise_std = trial.suggest_uniform("noise_std", 0, 0.2)
 
     # NOTE: Add "verybig" to net_arch when tuning HER (see TD3)
-    net_arch = trial.suggest_categorical("net_arch", ["small", "medium", "big"])
+    # net_arch = trial.suggest_categorical("net_arch", ["small", "medium", "big"])
     # activation_fn = trial.suggest_categorical('activation_fn', [nn.Tanh, nn.ReLU, nn.ELU, nn.LeakyReLU])
-    activation_fn = trial.suggest_categorical("activation_fn", ["tanh", "relu"])
+    # activation_fn = trial.suggest_categorical("activation_fn", ["tanh", "relu"])
     # activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU, "elu": nn.ELU, "leaky_relu": nn.LeakyReLU}[activation_fn]
 
 

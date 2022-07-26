@@ -173,3 +173,6 @@ actions_logs*
 models*
 optuna.db
 dataset.pkl
+retreino*
+retrain*
+monitor.csv

@@ -202,6 +202,7 @@ if __name__ == '__main__':
     print('-'*100)
 
 
+
     def objective(trial: optuna.Trial):        
        
         trial.n_actions = len(args.tickers)
@@ -214,6 +215,7 @@ if __name__ == '__main__':
         print(initial_hyperparameters)
         
         metric = 0
+        count_zero_variance = 0
         for n_repeat in range(args.n_repeats_by_trial):
             
             # env_train_kwargs['num_stock_shares'] = np.random.randint(0, args.hmax, stock_dimension).tolist()
@@ -380,6 +382,12 @@ if __name__ == '__main__':
 
             account_memory, actions_memory, state_memory = model_utils.predict(trained_model, env_eval)
 
+            if account_memory['account_value'].std() == 0:
+                count_zero_variance += 1
+
+            if count_zero_variance >= 2:
+                return -np.inf
+
             temp_metric = backtest_stats(account_value=account_memory)[
                 args.metric_to_optimize
             ]
@@ -392,10 +400,10 @@ if __name__ == '__main__':
             df_history['cumulated_return'] = (df_history['daily_return'] + 1).cumprod()
             df_history = df_history.merge(state_memory, how='left', on='date')
 
-            df_log_eval = pd.read_csv(
-                PATH_LOG_EVAL + '.monitor.csv',
-                skiprows=[0]
-            )
+            # df_log_eval = pd.read_csv(
+            #     PATH_LOG_EVAL + '.monitor.csv',
+            #     skiprows=[0]
+            # )
             # print(df_log_eval)
 
             # temp_metric = df_log_eval.tail(args.n_eval_episodes * 5)['r'].mean()
@@ -404,11 +412,8 @@ if __name__ == '__main__':
 
             # print(account_memory)
             # print('Last Value:', account_memory.iloc[-1])
-            temp_metric = account_memory['account_value'].iloc[-1] / account_memory['account_value'].iloc[0] - 1
+            # temp_metric = account_memory['account_value'].iloc[-1] / account_memory['account_value'].iloc[0] - 1
 
-
-            if temp_metric < 0.001:
-                return -np.inf
 
             register = dict()
             
@@ -434,7 +439,6 @@ if __name__ == '__main__':
                 index=False,
                 header=header
             )
-
 
             df_history.to_csv(
                 os.path.join(
