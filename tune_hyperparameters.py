@@ -12,7 +12,7 @@ from datetime import datetime
 from sqlalchemy import column
 from finrl.meta.preprocessor.preprocessors import FeatureEngineer, data_split
 from finrl.meta.preprocessor.yahoodownloader import YahooDownloader
-from finrl.meta.env_stock_trading.env_stocktrading import StockTradingEnv
+
 from finrl.plot import backtest_stats
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize, VecMonitor, sync_envs_normalization
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
         default=[config.TRADE_START_DATE, config.TRADE_END_DATE]
     )
 
-    parser.add_argument("--hmax", default=200, type=int)
+    parser.add_argument("--hmax", default=200, type=float)
 
     parser.add_argument("--use-ohlcv", default=False, type=bool)
     
@@ -85,12 +85,25 @@ if __name__ == '__main__':
     parser.add_argument('--use-tech-indicators', default=False, type=bool)
 
     parser.add_argument(
-        '--indicators', nargs='+', default=config.INDICATORS,
+        '--tech-indicators', nargs='+', default=config.TECH_INDICATORS,
         required=False
     )
 
+    parser.add_argument(
+        '--fundamental-indicators', nargs='+', default=config.FUNDAMENTAL_INDICATORS,
+        required=False
+    )
+
+    parser.add_argument('--experiment-name', default='', type=str)
+    
+    parser.add_argument('-v', default=1, type=int)
 
     args = parser.parse_args()
+
+    if args.v == 1:
+        from finrl.meta.env_stock_trading.env_stocktrading import StockTradingEnv
+    elif args.v == 2:
+        from finrl.meta.env_stock_trading.env_stocktrading import StockTradingEnvV2 as StockTradingEnv
 
     print('-'*100)
     print('Starting tuning at {}'.format(datetime.now()))
@@ -101,16 +114,31 @@ if __name__ == '__main__':
         TICKER_NAME = 'MULTIPLE_TICKERS'
     else:
         TICKER_NAME = '_'.join(args.tickers).replace('.SA', '')
+    
+    start_date_string = datetime.fromisoformat(args.train_period[0])
+    start_date_string = start_date_string.strftime('%m%Y')
+    end_date_string = datetime.fromisoformat(args.train_period[1])
+    end_date_string = end_date_string.strftime('%m%Y')
+    
+    experiment_name = args.experiment_name
+    experiment_name += f'{args.alg}_{args.hmax}'
+    experiment_name += '_TECH' if args.use_tech_indicators else ''
+    experiment_name += '_FUND' if args.use_fundamental_indicators else ''
 
     if args.output_path == '':
-        OUTPUT_PATH = './TUNING/{}/{}_HMAX_{}'.format(
-            TICKER_NAME, args.alg, args.hmax
+        OUTPUT_PATH = 'experiments/{}_{}_{}/{}/tuning/'.format(
+            TICKER_NAME, 
+            start_date_string,
+            end_date_string,
+            experiment_name
         )
-
         OUTPUT_PATH = file_utils.uniquify(OUTPUT_PATH)
     else:
         OUTPUT_PATH = os.path.join(
-            './TUNING', TICKER_NAME, args.output_path
+            'experiments', 
+            '{}_{}_{}'.format(TICKER_NAME, start_date_string, end_date_string), 
+            args.output_path, 
+            'tuning'
         )
 
     os.makedirs(OUTPUT_PATH, exist_ok=True)
@@ -122,28 +150,34 @@ if __name__ == '__main__':
 
     # DATA PROCESSING
     tech_indicators = []
+
     
     if args.use_fundamental_indicators:
         df = data_processing_utils.get_data_with_fundamentals(
             start_date=args.train_period[0], 
             end_date=args.trade_period[1], 
             tickers=args.tickers,
-            tech_indicators=args.indicators
+            tech_indicators=args.tech_indicators
         )
-        tech_indicators += [
-            'LPA', 'VPA', 'P/L', 'P/EBITDA', 'P/VPA', 'DL/PL', 'DL/EBITDA',
-            'ROE', 'MARGEM_EBITDA', 'DL/EBIT', 'MARGEM_EBIT', 'MARGEM_LIQUIDA'
-        ]
+        for indicator in args.fundamental_indicators:
+            if indicator in df:
+                tech_indicators += [indicator]
+            else:
+                print(f'WARNING: The indicator {indicator} is not present in dataset.')
     else:
         df = data_processing_utils.get_data(
             start_date=args.train_period[0], 
             end_date=args.trade_period[1], 
             tickers=args.tickers,
-            tech_indicators=args.indicators
+            tech_indicators=args.tech_indicators
         )
 
     if args.use_tech_indicators:
-        tech_indicators += args.indicators
+        for indicator in args.tech_indicators:
+            if indicator in df:
+                tech_indicators += [indicator]
+            else:
+                print(f'WARNING: The indicator {indicator} is not present in dataset.')
 
 
     # STORING DATASET
@@ -173,7 +207,6 @@ if __name__ == '__main__':
 
     env_train_kwargs = {
         'stock_dim': stock_dimension,
-        'hmax': args.hmax,
         'initial_amount': args.initial_amount,
         'num_stock_shares': num_stock_shares,
         'buy_cost_pct': buy_cost_list,
@@ -185,6 +218,11 @@ if __name__ == '__main__':
         'turbulence_threshold': None,
         'print_verbosity': 1000
     }
+
+    if args.v == 1:
+        env_train_kwargs['hmax'] = args.hmax
+    elif args.v == 2:
+        env_train_kwargs['perc_hmax'] = args.hmax
 
 
     with open(os.path.join(OUTPUT_PATH, 'env_train_kwargs.json'), 'w') as f:
@@ -380,7 +418,7 @@ if __name__ == '__main__':
                     )
                 )
 
-            account_memory, actions_memory, state_memory = model_utils.predict(trained_model, env_eval)
+            account_memory, actions_memory, state_memory = model_utils.predict(trained_model, trained_model.env)
 
             if account_memory['account_value'].std() == 0:
                 count_zero_variance += 1
@@ -472,7 +510,7 @@ if __name__ == '__main__':
     sampler = optuna.samplers.TPESampler(
         seed=225214
     )
-
+    print(OUTPUT_PATH)
     study = optuna.create_study(
         storage='sqlite:///{}/{}'.format(OUTPUT_PATH, 'optuna.db'),
         study_name="{}_study".format(args.alg),
