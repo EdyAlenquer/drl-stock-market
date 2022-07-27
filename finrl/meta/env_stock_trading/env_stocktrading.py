@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import List
+from cv2 import invert
 
 import gym
 import matplotlib
@@ -591,7 +592,8 @@ class StockTradingEnvV2(gym.Env):
         previous_state=[],
         model_name="",
         mode="",
-        iteration=""
+        iteration="",
+        invert_action=False
     ):
         self.day = day
         self.df = df
@@ -620,17 +622,12 @@ class StockTradingEnvV2(gym.Env):
         self.model_name = model_name
         self.mode = mode
         self.iteration = iteration
+        self.invert_action = invert_action
         # initalize state
         self.state = self._initiate_state()
 
         self.perc_hmax = perc_hmax
 
-        print(self.initial_amount)
-        print(type(self.initial_amount))
-        print(self.initial_amount)
-        print(type(self.data.close))
-        print(self.perc_hmax)
-        print(type(self.perc_hmax))
         self.hmax = int(self.initial_amount / self.data.close * self.perc_hmax)
 
         # initialize reward
@@ -872,6 +869,9 @@ class StockTradingEnvV2(gym.Env):
             #     self.hmax = int(self.state[2])
 
             self.hmax = int(self.total_asset / self.data.close * self.perc_hmax)
+
+            if self.invert_action:
+                actions = -1 * actions
 
             actions = actions * self.hmax  # actions initially is scaled between 0 to 1
 
